@@ -22,7 +22,7 @@ const productSchema = new mongoose.Schema({
     },
     storage:{
         type: Number,
-        required: true
+        required: false
     },
     images:{ 
         type: [String]
@@ -41,11 +41,11 @@ const productSchema = new mongoose.Schema({
     },
     priceTo:{
         type: Number,
-        required: true
+        required: false
     },
     ram:{ 
         type: Number,
-        required: true
+        required: false
     },
     inStockQuantity:{ 
         type: Number, 

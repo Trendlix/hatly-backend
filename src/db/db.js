@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const connectDatabase = () => {
   mongoose
     .connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      // useNewUrlParser: true,
+      // useUnifiedTopology: true,
       // createIndexes: true,
     })
     .then((data) => {
