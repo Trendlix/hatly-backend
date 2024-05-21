@@ -54,10 +54,11 @@ const orderSchema = new mongoose.Schema({
         required: true
        }
     },
-    deliveryStatus: {
-        type: String,
-        default: 'not-delivered',
-        enum: ['not-delivered', 'delivered']
+    orderStatus: { 
+        type: String, 
+        required: true, 
+        enum: ['Processing', 'Shipped', 'Delivered', 'Cancelled'], 
+        default: 'Processing' 
     },
     paymentMethod: {
         type: String,

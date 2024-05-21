@@ -36,7 +36,8 @@ productRouter.post("/products", async (req, res) => {
       ram,
       inStockQuantity,
       inStock,
-      isForSale
+      isForSale,
+      price
     } = req.body
 
     const newProduct = new Product({
@@ -53,7 +54,8 @@ productRouter.post("/products", async (req, res) => {
       ram,
       inStockQuantity,
       inStock,
-      isForSale
+      isForSale,
+      price
     })
     await newProduct.save().then((product)=>{
       console.log('product saved')
