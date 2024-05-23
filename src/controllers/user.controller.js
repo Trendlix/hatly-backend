@@ -282,7 +282,7 @@ const resetPassword = async (req, res, next) => {
       .digest('hex');
 
     const user = await User.findOne({
-      passwordResetToken: hashedToken,
+      // passwordResetToken: hashedToken,
       passwordResetExpires: { $gt: Date.now() }
     });
 
@@ -315,7 +315,7 @@ const resetPassword = async (req, res, next) => {
 const forgotPassword = async (req, res, next) => {
   try {
     const { phone } = req.body
-    const url = 'https://hatlystore.trendlix.com/change-password'
+    const url = process.env.NODE_ENV === 'production' ? 'https://hatlystore.trendlix.com/change-password' : 'http://localhost:3000/change-password'
     const user = await User.findOne({ phone })
     if (!user) {
       // return res.status(404).send('user with this email dose not exist')
@@ -325,7 +325,7 @@ const forgotPassword = async (req, res, next) => {
     // const token = jwt.sign({ _id: user._id }, 'resetPassword', { expiresIn: '20m' })
 
     await user.save({ validateBeforeSave: false });
-    sendSMS(phone, `Use this link to reset your password  ${url}?token=${token}`)
+    sendSMS(phone, `Use this link to reset your password ${url}?token=${token}`)
 
     res.status(200).json({
       ok: true,
@@ -333,7 +333,8 @@ const forgotPassword = async (req, res, next) => {
       message: 'succeeded',
       body: 'check your phone number'
     })
-    // user.updateOne({ resetLink: token }, function (err, success) {
+
+    // User.updateOne({ resetLink: token }, function (err, success) {
     //   if (err) {
     //     return next(ServerError.badRequest(400, 'something went wrong'))
     //   }

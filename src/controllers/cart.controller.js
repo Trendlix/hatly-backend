@@ -1,7 +1,9 @@
 const Cart = require('../models/cartModel');
 const Order = require('../models/orderModel');
 const Product = require('../models/productModel');
+const { sendOrderMail } = require('../utils/sendOrderMail');
 const sendSMS = require('../utils/sendSMS');
+
 
 const addToCart = async(req, res) => {
     try {
@@ -131,6 +133,8 @@ const deleteCartItem = async (req, res) => {
         }
         const itemIndex = cart.products.findIndex(product => product.productId.equals(itemId))
         if(itemIndex > -1){
+            const productAllData = await Product.findById(cart.products[itemIndex].productId)
+            cart.totalPrice -= cart.products[itemIndex].quantity * productAllData.price
             cart.products.splice(itemIndex, 1)
             await cart.save()
         }else{
@@ -173,13 +177,15 @@ const checkoutCart = async (req, res) => {
             products: cart.products,
             address,
             paymentMethod,
-            totalPrice: cart.totalPrice
+            totalAmount: cart.totalPrice
         })
         await order.save()
+        const ordersUrl = process.env.NODE_ENV === 'production' ? `https://hatlystore.trendlix.com/orders/${order._id}`: `http://localhost:3000/orders/${order._id}`
+        // await sendSMS(user.phone, `Your order of id ${order._id} has been confirmed successfully check it from here ${ordersUrl}`);
+        await sendOrderMail(user, order)
         cart.products = [];
         cart.totalPrice = 0;
         await cart.save()
-        await sendSMS(user.phone, `Your order ${order._id} has been confirmed check it from here https://hatlystore.trendlix.com/orders/${order._id}`);
         
         res.status(200).json({
             message: "your order is placed successfully, Thanks for using Hatly Stores!",

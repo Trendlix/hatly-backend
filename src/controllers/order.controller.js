@@ -251,7 +251,7 @@ const getOrder = async (req, res, next) => {
     //   ]
     // )
 
-    const order = await Order.findById({ orderId }).populate('products.productId')
+    const order = await Order.findById(orderId).populate('products.productId')
     if (!order.userId.equals(user._id))
       return next(ServerError.badRequest(400, 'order not found'));
     // const [orderItems, ...orderItemsRest] = await db.query(
