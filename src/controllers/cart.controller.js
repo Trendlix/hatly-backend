@@ -5,15 +5,35 @@ const { sendOrderMail } = require('../utils/sendOrderMail');
 const sendSMS = require('../utils/sendSMS');
 
 
+const syncCart = async(req, res) => {
+    try {
+        const user = req.user;
+        const localCart = req.body
+        console.log(localCart)
+        let cart = await Cart.findOne({userId: user._id}).populate('products.productId')
+        if(!cart) {
+            cart = new Cart({userId: user._id, products: localCart.products.map((item)=> {return {productId: item._id, quantity: item.quantity}} ), total: localCart.total, totalQuantity: localCart.totalQuantity}) 
+        } 
+        // localCart.products.findIndex((cartItem)=>)
+        // cart.products = [...cart.products, ...localCart.products.map((item)=> {return {productId: item._id, quantity: item.quantity}})]
+        // cart.total = localCart.total
+        // cart.totalQuantity = localCart.totalQuantity
+        await cart.save()
+        res.status(200).json(cart)
+    } catch (error) {
+        res.status(500).send(error.message)
+    }
+}
+
 const addToCart = async(req, res) => {
     try {
         const user = req.user;
         console.log('user in request', user)
         const { productId, quantity } = req.body;
-        let cart = await Cart.findOne({ userId: user._id })
+        let cart = await Cart.findOne({ userId: user._id }).populate('products.productId')
         console.log('usercart', cart)
         if(!cart) {
-            cart = new Cart({userId: user._id, products: [], totalPrice: 0}) 
+            cart = new Cart({userId: user._id, products: [], total: 0, totalQuantity: 0}) 
         }
         // this checks if the product we are trying to add is already in the cart
         // findIndex return the index of the first product that meets the condition if not found returns -1
@@ -40,14 +60,17 @@ const addToCart = async(req, res) => {
             })
         }
         // const productData = await Cart.findById(productId)
-        let totalPrice = 0;
+        let total = 0;
+        let totalQuantity = 0;
         for (const cartItem of cart.products) {
             const product = await Product.findById(cartItem.productId);
             console.log(product)
-            totalPrice += product.price * cartItem.quantity;
-            console.log('totalPrice of cart', totalPrice)
+            total += product.price * cartItem.quantity;
+            totalQuantity += cartItem.quantity
+            console.log('total of cart', total)
         }
-        cart.totalPrice = totalPrice
+        cart.total = total
+        cart.totalQuantity = totalQuantity
         await cart.save()
         res.status(200).json(cart);
     } catch (error) {
@@ -63,7 +86,7 @@ const addToCart = async(req, res) => {
 const getCart = async (req, res) => {
     try {
         const user = req.user;
-        const cart = await Cart.findOne({ userId: user._id })
+        const cart = await Cart.findOne({ userId: user._id }).populate('products.productId')
         console.log('you cart is ', cart)
         if(!cart){
             return res.status(404).json({
@@ -123,7 +146,7 @@ const deleteCartItem = async (req, res) => {
     try {
         const { itemId } = req.params
         const user = req.user
-        const cart = await Cart.findOne({ userId: user._id })
+        const cart = await Cart.findOne({ userId: user._id }).populate('products.productId')
         if(!cart){
             return res.status(404).json({
                 ok: false,
@@ -134,7 +157,8 @@ const deleteCartItem = async (req, res) => {
         const itemIndex = cart.products.findIndex(product => product.productId.equals(itemId))
         if(itemIndex > -1){
             const productAllData = await Product.findById(cart.products[itemIndex].productId)
-            cart.totalPrice -= cart.products[itemIndex].quantity * productAllData.price
+            cart.total -= cart.products[itemIndex].quantity * productAllData.price
+            cart.totalQuantity -= cart.products[itemIndex].quantity
             cart.products.splice(itemIndex, 1)
             await cart.save()
         }else{
@@ -158,7 +182,7 @@ const deleteCartItem = async (req, res) => {
 const checkoutCart = async (req, res) => {
     try {
         const user = req.user
-        const { address, paymentMethod } = req.body
+        const { address, paymentMethod, TransactionId, deliveryFees } = req.body
         const cart = await Cart.findOne({ userId: user._id }).populate('products.productId')
         if(!cart){
             return res.status(404).json({
@@ -176,21 +200,23 @@ const checkoutCart = async (req, res) => {
             userId: user._id,
             products: cart.products,
             address,
-            paymentMethod,
-            totalAmount: cart.totalPrice
+            paymentMethod: paymentMethod === 'Cash' ? 'Cash on Delivery': 'Online Payment',
+            subTotal: cart.total,
+            totalAmount: cart.total + deliveryFees
         })
         await order.save()
         const ordersUrl = process.env.NODE_ENV === 'production' ? `https://hatlystore.trendlix.com/orders/${order._id}`: `http://localhost:3000/orders/${order._id}`
         // await sendSMS(user.phone, `Your order of id ${order._id} has been confirmed successfully check it from here ${ordersUrl}`);
         await sendOrderMail(user, order)
         cart.products = [];
-        cart.totalPrice = 0;
+        cart.total = 0;
+        cart.totalQuantity = 0
         await cart.save()
         
         res.status(200).json({
             message: "your order is placed successfully, Thanks for using Hatly Stores!",
             order,
-            success: 'ok' 
+            ok: true
         })
     } catch (error) {
         console.log(error);
@@ -204,4 +230,4 @@ const checkoutCart = async (req, res) => {
 
 
 
-module.exports = { addToCart, getCart, updateCart, checkoutCart, deleteCartItem}
+module.exports = { addToCart, getCart, updateCart, checkoutCart, deleteCartItem, syncCart}

@@ -52,6 +52,11 @@ const orderSchema = new mongoose.Schema({
         default: '',
         trim: true,
         required: true
+       }, 
+       extraDescription: {
+        type: String, 
+        required: false,
+        default: ''
        }
     },
     orderStatus: { 
@@ -62,13 +67,26 @@ const orderSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        default: 'cash on delivery',
-        enum: ['cash on delivery', 'online']
+        default: 'Cash on Delivery',
+        enum: ['Cash on Delivery', 'Online Payment']
     },
     paymentStatus: {
         type: String,
         default: 'not-paid',
         enum: ['not-paid', 'paid']
+    },
+    TransactionId: {
+        type: String,
+    },
+    deliveryFees: {
+        type:Number,
+        required: true,
+        default: 0,
+    },
+    subTotal: {
+        type: Number,
+        required: true,
+        default: 0
     }
 }, {timestamps: true})
 
