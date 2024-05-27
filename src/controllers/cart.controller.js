@@ -9,6 +9,7 @@ const syncCart = async(req, res) => {
     try {
         const user = req.user;
         const localCart = req.body
+        console.log('localCart', localCart)
         console.log(localCart)
         let cart = await Cart.findOne({userId: user._id}).populate('products.productId')
         if(!cart) {
@@ -19,6 +20,7 @@ const syncCart = async(req, res) => {
         // cart.total = localCart.total
         // cart.totalQuantity = localCart.totalQuantity
         await cart.save()
+        cart = await Cart.findOne({userId: user._id}).populate('products.productId')
         res.status(200).json(cart)
     } catch (error) {
         res.status(500).send(error.message)
@@ -72,6 +74,7 @@ const addToCart = async(req, res) => {
         cart.total = total
         cart.totalQuantity = totalQuantity
         await cart.save()
+        cart = await Cart.findOne({ userId: user._id }).populate('products.productId');
         res.status(200).json(cart);
     } catch (error) {
         console.log(error);
@@ -146,7 +149,7 @@ const deleteCartItem = async (req, res) => {
     try {
         const { itemId } = req.params
         const user = req.user
-        const cart = await Cart.findOne({ userId: user._id }).populate('products.productId')
+        let cart = await Cart.findOne({ userId: user._id })
         if(!cart){
             return res.status(404).json({
                 ok: false,
@@ -168,6 +171,7 @@ const deleteCartItem = async (req, res) => {
                 message: 'Product not found in cart'
             })
         }
+        cart = await Cart.findOne({ userId: user._id }).populate('products.productId');
         res.status(200).json(cart);      
     } catch (error) {
         console.log(error)
@@ -192,7 +196,7 @@ const checkoutCart = async (req, res) => {
             })
         }
         for (const product of cart.products){
-            const productAllData = await Product.findById(product.productId)
+            const productAllData = await Product.findById(product.productId._id)
             productAllData.inStockQuantity -= product.quantity
             await productAllData.save()
         }
@@ -202,7 +206,8 @@ const checkoutCart = async (req, res) => {
             address,
             paymentMethod: paymentMethod === 'Cash' ? 'Cash on Delivery': 'Online Payment',
             subTotal: cart.total,
-            totalAmount: cart.total + deliveryFees
+            totalAmount: cart.total + deliveryFees,
+            TransactionId
         })
         await order.save()
         const ordersUrl = process.env.NODE_ENV === 'production' ? `https://hatlystore.trendlix.com/orders/${order._id}`: `http://localhost:3000/orders/${order._id}`
