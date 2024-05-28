@@ -1,6 +1,7 @@
 const Cart = require('../models/cartModel');
 const Order = require('../models/orderModel');
 const Product = require('../models/productModel');
+const User = require('../models/userModel');
 const { sendOrderMail } = require('../utils/sendOrderMail');
 const sendSMS = require('../utils/sendSMS');
 
@@ -186,8 +187,9 @@ const deleteCartItem = async (req, res) => {
 const checkoutCart = async (req, res) => {
     try {
         const user = req.user
-        const { address, paymentMethod, TransactionId, deliveryFees } = req.body
+        const { address, paymentMethod, TransactionId, deliveryFees, extraDescription } = req.body
         const cart = await Cart.findOne({ userId: user._id }).populate('products.productId')
+        console.log(cart)
         if(!cart){
             return res.status(404).json({
                 ok: false,
@@ -207,7 +209,8 @@ const checkoutCart = async (req, res) => {
             paymentMethod: paymentMethod === 'Cash' ? 'Cash on Delivery': 'Online Payment',
             subTotal: cart.total,
             totalAmount: cart.total + deliveryFees,
-            TransactionId
+            TransactionId,
+            extraDescription: extraDescription ? extraDescription : '',
         })
         await order.save()
         const ordersUrl = process.env.NODE_ENV === 'production' ? `https://hatlystore.trendlix.com/orders/${order._id}`: `http://localhost:3000/orders/${order._id}`
@@ -217,12 +220,19 @@ const checkoutCart = async (req, res) => {
         cart.total = 0;
         cart.totalQuantity = 0
         await cart.save()
-        
+        const originalUser = await User.findById(user._id)
+        originalUser.city = address.city
+        originalUser.country = address.country
+        originalUser.floor = address.floor
+        originalUser.apartment = address.apartment
+        originalUser.building = address.building
+        originalUser.street = address.street
+        await originalUser.save()
         res.status(200).json({
             message: "your order is placed successfully, Thanks for using Hatly Stores!",
             order,
             ok: true
-        })
+        })        
     } catch (error) {
         console.log(error);
         res.status(500).json({

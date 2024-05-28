@@ -77,6 +77,7 @@ productRouter.get("/products/:id", async (req, res) => {
     //   id +
     //   "'",
     //   );
+    console.log(id, 'from find product by id')
     await Product.findById(id).then((product)=>{
       console.log('product found')
       return res.status(200).send(product);

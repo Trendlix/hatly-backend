@@ -55,6 +55,7 @@ const sendOrderMail = async (user, order) =>{
     console.error(err)
   }
 }
+
 // mailRouter.post("/mail", async (req, res) => {
 //   const name = req.body.name;
 //   const orderID = req.body.orderID;
@@ -115,51 +116,6 @@ const sendOrderMail = async (user, order) =>{
 // });
 
 
-// mailRouter.post("/mail/contact", (req, res) => {
 
-//   try {
-//     var transporter = nodemailer.createTransport({
-//       service: "gmail",
-//       auth: {
-//         user: "mostafamabdallah94@gmail.com",
-//         pass: "piutjcingwgnxhsv",
-//       },
-//     });
-
-//     var mailOptions = {
-//       from: req.body.data.firstName,
-//       to: "mostafamabdallah94@gmail.com",
-//       subject: req.body.data.subject,
-//       html: `<body>
-//       <div style="padding: 30px;">
-//           <div style="display: flex;">
-//               <div style="width: 50%;">From</div>
-//               <div style="width: 50%;">${req.body.data.firstName}</div>
-//           </div>
-//           <div style="display: flex;">
-//               <div style="width: 50%;">Phone</div>
-//               <div style="width: 50%;">${req.body.data.phone}</div>
-//           </div>
-//           <div style="display: flex;">
-//               <div style="width: 50%;">Subject ${req.body.data.email}</div>
-//               <div style="width: 50%;">${req.body.data.subject}</div>
-//           </div>
-//           <div style="display: flex;">
-//               <div style="width: 50%;">Messeage</div>
-//               <div style="width: 50%;">${req.body.data.message}</div>
-//           </div>
-//       </div>
-//   </body>`,
-//     };
-
-//     transporter.sendMail(mailOptions, function (error, info) {
-//       if (error) {
-//         return res.send(error)
-//       } else {
-//         return res.send('true')
-//       }
-//     });
-//   } catch (er) { }
-// })
 
 module.exports = { sendOrderMail };

@@ -7,7 +7,7 @@ const cookieParser = require("cookie-parser");
 const productRouter = require("./src/routes/product");
 const categoryRouter = require("./src/routes/category");
 const brandRouter = require("./src/routes/brands");
-// const mailRouter = require("./src/routes/mail");
+const mailRouter = require('./src/routes/mail')
 const attactmentsRouter = require("./src/routes/attactments");
 
 const api = require('./src/routes/index');
@@ -33,7 +33,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/api/v1/", productRouter);
 app.use("/api/v1/", categoryRouter);
 app.use("/api/v1/", brandRouter);
-// app.use("/api/v1/", mailRouter);
+app.use("/api/v1/", mailRouter);
 app.use("/api/v1/", attactmentsRouter);
 app.use('/api/v1/' , api)
 
