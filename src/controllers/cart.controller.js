@@ -209,6 +209,7 @@ const checkoutCart = async (req, res) => {
             paymentMethod: paymentMethod === 'Cash' ? 'Cash on Delivery': 'Online Payment',
             subTotal: cart.total,
             totalAmount: cart.total + deliveryFees,
+            deliveryFees,
             TransactionId,
             extraDescription: extraDescription ? extraDescription : '',
         })
