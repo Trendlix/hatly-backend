@@ -1,31 +1,29 @@
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
-    code:{ 
+    item_code:{ 
         type: String, 
-        required: true ,
-        unique: true
+        required: false ,
     },
     name:{ 
         type: String, 
         required: true,
-        unique: true 
     },
     group:{ 
         type: String, 
         required: true, 
-        enum:["phones", "chargers", "smart watches", "headphones", "accessories" ]
     },
     color:{
         type: String,
-        required: true
+        required: false
     },
     storage:{
         type: Number,
         required: false
     },
     images:{ 
-        type: [String]
+        type: [String],
+        trim: true
     },
     description:{ 
         type: String, 
@@ -33,7 +31,7 @@ const productSchema = new mongoose.Schema({
     },
     brand:{ 
         type: String,
-        required: true 
+        required: false 
     },
     price: {
         type: Number,
@@ -42,7 +40,7 @@ const productSchema = new mongoose.Schema({
     },
     priceFrom:{
         type: Number,
-        required: true
+        required: false
     },
     priceTo:{
         type: Number,
@@ -54,7 +52,8 @@ const productSchema = new mongoose.Schema({
     },
     inStockQuantity:{ 
         type: Number, 
-        required: true 
+        required: true,
+        default: 0
     },
     inStock:{
         type: Boolean,
@@ -65,7 +64,14 @@ const productSchema = new mongoose.Schema({
         type: Boolean, 
         required: true,
         default: true
-    }}, {timestamps: true}
+    },
+    has_variants:{
+         type: Boolean,
+         required: true,
+         default: false
+    }
+}, {timestamps: true}
+
 );
 
 const Product = mongoose.model('Product', productSchema);

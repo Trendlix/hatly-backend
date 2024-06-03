@@ -4,16 +4,15 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 
-const productRouter = require("./src/routes/product");
-const categoryRouter = require("./src/routes/category");
-const brandRouter = require("./src/routes/brands");
-const mailRouter = require('./src/routes/mail')
-const attactmentsRouter = require("./src/routes/attactments");
+const productRouter = require("./routes/product");
+const categoryRouter = require("./routes/category");
+const brandRouter = require("./routes/brands");
+const mailRouter = require('./routes/mail')
 
-const api = require('./src/routes/index');
-const connectDatabase = require("./src/db/db");
-const errorMiddleWare = require("./src/middleware/error.middleware");
-const ServerError = require("./src/utils/ErrorInterface");
+const api = require('./routes/index');
+const connectDatabase = require("./db/db");
+const errorMiddleWare = require("./middleware/error.middleware");
+const ServerError = require("./utils/ErrorInterface");
 
 dotenv.config();
 
@@ -34,12 +33,12 @@ app.use("/api/v1/", productRouter);
 app.use("/api/v1/", categoryRouter);
 app.use("/api/v1/", brandRouter);
 app.use("/api/v1/", mailRouter);
-app.use("/api/v1/", attactmentsRouter);
 app.use('/api/v1/' , api)
 
 app.use((req, res, next) => {
   next(ServerError.badRequest(404, 'page not found'))
 })
+
 app.use(errorMiddleWare);
 
 

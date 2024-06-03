@@ -1,4 +1,3 @@
-const db = require("../database");
 const { customAlphabet } = require('nanoid');
 const ServerError = require("../utils/ErrorInterface");
 const sendSMS = require("../utils/sendSMS");

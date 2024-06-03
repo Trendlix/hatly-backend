@@ -1,5 +1,4 @@
 const categoryRouter = require("express").Router();
-const db = require("../database");
 const Product = require("../models/productModel");
 
 categoryRouter.get("/category", async(req, res) => {
