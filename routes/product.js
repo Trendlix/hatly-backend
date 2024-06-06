@@ -248,181 +248,76 @@ productRouter.post("/products", async (req, res) => {
 });
 
 productRouter.get("/products/erp/:docName", async (req, res) => {
-  // const db = connectToDB();
-  // const docName = req.params.docName;
-  // if (!docName) res.status(400).send("docName is required");
-  // console.log(docName);
-  // // get the data
-  // await db.getDocList("Item", {
-  //     filters: { variant_of: docName },
-  //     fields: [
-  //       "name", "item_name", "item_code", "item_group", "description", "brand", "is_stock_item", "is_sales_item", "image", "has_variants", "variant_of",
-  //     ],
-  //     limit: "4000",
-  //   }).then(async (data) => {
-  //     if (!data || data.length < 1)
-  //       res.status(400).send("No data was found for this docName");
-  //     let readStock = new PythonShell("./python/readStock.py")
-  //     // console.log('data', data)
-  //     data.forEach((item)=> {
-  //       if(item.image === null || item.image === ""){
-  //         const firstChar = item.brand ? item.brand.charAt(0) : ''
-  //         item.image = firstChar
-  //       }else{
-  //         item.image = `${process.env.ERP_SERVER}/${item.image}`;
-  //       }
-  //     })
-  //     await db.getDocList("Item Price", {
-  //         fields: ["item_code", "price_list_rate"],
-  //         limit: "4000",
-  //       }).then(async (priceList) => {
-  //         // console.log('priceList', priceList)
-  //           //get the price
-  //           data.forEach(async (i, index) => {
-  //               priceList.forEach(async (_) => {
-  //               if (i.item_code == _.item_code) {
-  //                 data[index].price = _.price_list_rate 
-  //                 // await dbProduct.save()
-  //               }
-  //               else data[index].price = 0
-  //               })
-  //           });
-  //           console.log('dataAfter', data)
-  //           // res.status(200).send(data)
-  //           // get the attributes
-  //           let attributes = []
-  //           Promise.all(
-  //             [
-  //               ...data.map(_=>_.name).map(async i => {
-  //               await db.getDoc("Item", i)
-  //               .then(async (doc) => {
-  //                 console.log('doc', doc)
-  //                   if (doc.attributes && doc.attributes.length > 0)
-  //                   attributes[i] = doc.attributes?.map((_) => ({
-  //                       [_.attribute]: _.attribute_value
-  //                   }));
-  //               }).catch((e) => { console.error(e); res.status(500).send(e.message); });
-  //               }),
-  //               // get stock quantity
-  //               await new Promise(resolve=>{
-  //                 readStock.send(JSON.stringify({...credintials, "code": data.map(_=>_.item_code) })); 
-  //                 readStock.on("message", function (message) {
-  //                   const result = message.substring(1, message.length-1).split(',')
-  //                   console.log('result', result)
-  //                   data.forEach((list, index)=>{
-  //                     console.log('message[index]', result[index])
-  //                     list.stockQty = result[index] 
-  //                   })
-  //                   resolve();
-  //                   // editStock.send(
-  //                   //   JSON.stringify({ ...credintials, newQty: parseInt(message) - 1 })
-  //                   // );
-  //                 });
-  //               })
-  //             ]
-  //           ).then(()=>{
-  //               data.forEach((list, index)=>{
-  //                   list.attributes=attributes[list.item_code]
-  //                   // console.log('list', attributes[list.item_code])
-  //               })
-  //               console.log('sending data...')
-  //               res.status(200).json(data);
-  //           }).catch(e=>{
-  //               console.log(e)
-  //               res.status(500).send(e.message)
-  //           })
-  //           // res.status(200).json(data);
-  //       }).catch((e) => {
-  //         console.log('e', e)
-  //         res.status(500).send(e.message);
-  //       });
-        
-  //   }).catch((e) => {
-  //     res.status(500).send(e.message);
-  //   });
+  try {
+    const db = connectToDB();
+    const docName = req.params.docName;
+    if (!docName) return res.status(400).send("docName is required");
 
-  const db = connectToDB();
-  const docName = req.params.docName;
-  if (!docName) res.status(400).send("docName is required");
-
-  // get the data
-  await db.getDocList("Item", {
+    // get the data
+    const data = await db.getDocList("Item", {
       filters: { variant_of: docName },
       fields: [
         "name", "item_name", "item_code", "item_group", "description", "brand", "is_stock_item", "is_sales_item", "image", "has_variants", "variant_of",
       ],
       limit: "4000",
-    }).then(async (data) => {
-      if (!data || data.length < 1)
-        res.status(400).send("No data was found for this docName");
-                
-      let readStock = new PythonShell("./python/readStock.py")
-      await db.getDocList("Item Price", {
-          fields: ["item_code", "price_list_rate"],
-          limit: "4000",
-        }).then(async (priceList) => {
-            //get the price
-            data.forEach(async (i, index) => {
-              priceList.forEach((_) => {
-                if (i.item_code == _.item_code) data[index].price = _.price_list_rate;
-                });
-                if(i.image === null || i.image === ""){
-                  const firstChar = i.brand ? i.brand.charAt(0) : ''
-                  i.image = firstChar
-                }else{
-                  i.image = `${process.env.ERP_SERVER}/${i.image}`;
-                }
-            });
-            //get the attributes
-            let attributes = []
-            Promise.all(
-              [
-                ...data.map(_=>_.name).map(async i => {
-                await db.getDoc("Item", i)
-                .then(async (doc) => {
-                    if (doc.attributes && doc.attributes.length > 0)
-                    attributes[i] = doc.attributes?.map((_) => ({
-                        [_.attribute]: _.attribute_value
-                    }));
-                }).catch((e) => { console.error(e); res.status(500).send(e.message); });
-                }),
-                // get stock quantity
-                await new Promise(resolve=>{
-                  setTimeout(() => resolve(), 3000)
-                  readStock.send(JSON.stringify({...credintials, "code": data.map(_=>_.item_code) }))
-                  readStock.on("message", function (message) {
-                    const result = message.substring(1, message.length-1).split(',')
-                    console.log('result', result)
-                    data.forEach((list, index)=>{
-                      console.log('message[index]', result[index])
-                      list.stockQty = result[index]
-                    })
-                    resolve()
-                    // editStock.send(
-                    //   JSON.stringify({ ...credintials, newQty: parseInt(message) - 1 })
-                    // );
-                  });
-                }),
-              ]
-            ).then(()=>{
-                data.forEach((list, index)=>{
-                    list.attributes=attributes[list.item_code]
-                    // console.log('list', attributes[list.item_code])
-                })
-                console.log('sending data...')
-                res.status(200).json(data);
-            }).catch(e=>{
-                console.log(e)
-                res.status(500).send(e.message)
-            })
-        }).catch((e) => {
-          console.log('e', e)
-          res.status(500).send(e.message);
-        });
-        
-    }).catch((e) => {
-      res.status(500).send(e.message);
     });
+
+    if (!data || data.length < 1) {
+      return res.status(400).send("No data was found for this docName");
+    }
+
+    let readStock = new PythonShell("./python/readStock.py");
+
+    const priceList = await db.getDocList("Item Price", {
+      fields: ["item_code", "price_list_rate"],
+      limit: "4000",
+    });
+
+    // get the price
+    data.forEach((i, index) => {
+      priceList.forEach((_) => {
+        if (i.item_code == _.item_code) data[index].price = _.price_list_rate;
+      });
+      if (i.image === null || i.image === "") {
+        const firstChar = i.brand ? i.brand.charAt(0) : '';
+        i.image = firstChar;
+      } else {
+        i.image = `${process.env.ERP_SERVER}/${i.image}`;
+      }
+    });
+
+    let attributes = [];
+    await Promise.all([
+      ...data.map(_ => _.name).map(async i => {
+        const doc = await db.getDoc("Item", i);
+        if (doc.attributes && doc.attributes.length > 0) {
+          attributes[i] = doc.attributes.map((_) => ({
+            [_.attribute]: _.attribute_value
+          }));
+        }
+      }),
+      new Promise(resolve => {
+        readStock.send(JSON.stringify({ ...credintials, "code": data.map(_ => _.item_code) }));
+        readStock.on("message", function (message) {
+          const result = message.substring(1, message.length - 1).split(',');
+          data.forEach((list, index) => {
+            list.stockQty = result[index].includes('None') ? 0 : Number(result[index])
+          });
+          resolve();
+        });
+      })
+    ]);
+
+    data.forEach((list, index) => {
+      list.attributes = attributes[list.item_code];
+    });
+
+    console.log('sending data...');
+    res.status(200).json(data);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send(e.message);
+  }
 });
 
 
