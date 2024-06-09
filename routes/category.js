@@ -121,13 +121,14 @@ categoryRouter.get("/category/:category",async (req, res) => {
     });
 
     // Filter and transform data
+    let images = []
     const filteredData = data
       .map((item) => {
         if (item.image === null || item.image === "") {
           const firstChar = item.brand ? item.brand.charAt(0) : "";
-          item.image = firstChar;
+          item.image = [...images, firstChar];
         } else {
-          item.image = `${process.env.ERP_SERVER}/${item.image}`;
+          item.image = [...images,`${process.env.ERP_SERVER}/${item.image}`];
         }
         return item;
       })
