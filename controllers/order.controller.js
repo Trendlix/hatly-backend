@@ -208,7 +208,7 @@ const getUserOrders = async (req, res, next) => {
     //   order.ordersItems = orderItems;
     // }
     
-    const userOrders = await Order.find({userId: user._id}).populate('products.productId')
+    const userOrders = await Order.find({userId: user._id})
     if(userOrders.length < 1) {
       return res.status(200).json({
         ok: true,
@@ -250,7 +250,7 @@ const getOrder = async (req, res, next) => {
     //   ]
     // )
 
-    const order = await Order.findById(orderId).populate('products.productId').populate('userId')
+    const order = await Order.findById(orderId).populate('userId')
     if (!order.userId._id.equals(user._id))
       return next(ServerError.badRequest(400, 'order not found'));
     // const [orderItems, ...orderItemsRest] = await db.query(
