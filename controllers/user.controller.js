@@ -373,7 +373,7 @@ const logout = async (req, res, next) => {
       expires: new Date(0), // Set expiration time to a past date
       path: '/',
       domain: process.env.NODE_ENV !== 'production' ? "localhost" : ".trendlix.com",
-      sameSite: 'none',
+      sameSite : process.env.NODE_ENV === 'production' ? 'None': 'lax',
     }).status(200).json({
       ok: true,
       code: 200,
