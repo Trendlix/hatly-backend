@@ -5,7 +5,6 @@ if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
 let { PythonShell } = require("python-shell");
-let editStock = new PythonShell("./python/editStock.py");
 
 const { FrappeApp } = require("frappe-js-sdk");
 if (process.env.NODE_ENV !== "production") {
@@ -132,10 +131,11 @@ const connectToDB = () => {
 // });
 
 productRouter.get('/products', async (req, res) => {
-  const db = connectToDB();
-  // get the data
-  await db
-    .getDocList("Item", {
+  try {
+    const db = connectToDB();
+
+    // Fetch items
+    const items = await db.getDocList("Item", {
       filters: { has_variants: true },
       fields: [
         "name",
@@ -151,35 +151,50 @@ productRouter.get('/products', async (req, res) => {
         "variant_of",
       ],
       limit: "4000",
-    }).then(async (data) => {
-      await db.getDocList("Item Price", {
-          fields: ["item_code", "price_list_rate"],
-          limit: "4000",
-        }).then((priceList) => {
-          priceList.forEach((_) => {
-            data.forEach((i) => {
-              if (i.item_code == _.item_code) {
-                i.price = _.price_list_rate;
-              }
-            });
-          });
-          data.forEach((item)=> {
-            if(item.image === null || item.image === ""){
-              const firstChar = item.brand ? item.brand.charAt(0) : ''
-              item.image = firstChar
-            }else{
-              item.image = `${process.env.ERP_SERVER}/${item.image}`;
-            }
-          })
-          res.status(200).json(data);
-        }).catch((e) => {
-          console.log(e);
-          res.status(500).send(e.message);
-        });
-    }).catch((e) => {
-      res.status(500).send(e.message);
     });
-})
+
+    if (!items || items.length === 0) {
+      return res.status(404).send("No items found");
+    }
+
+    // Fetch item prices
+    const priceList = await db.getDocList("Item Price", {
+      fields: ["item_code", "price_list_rate"],
+      limit: "4000",
+    });
+
+    if (!priceList || priceList.length === 0) {
+      console.log("No prices found");
+    }else{
+      console.log('priceList', priceList)
+    }
+
+    // Merge prices with items
+    items.forEach(item => {
+      const priceItem = priceList.find(price => price.item_code === item.item_code);
+      item.price = priceItem ? priceItem.price_list_rate : 0;
+    });
+
+    // Process images
+    let images = []
+    items.forEach(item => {
+      if (!item.image) {
+        const firstChar = item.brand ? item.brand.charAt(0) : '';
+        item.image = [...images, firstChar];
+      } else {
+        item.image = [...images, `${process.env.ERP_SERVER}/${item.image}`];
+      }
+    });
+
+    // Send the response
+    res.status(200).json(items);
+
+  } catch (error) {
+    console.log('Error:', error);
+    res.status(500).send(error.message);
+  }
+});
+
 
 // productRouter.get("/products", async (req, res) => {
 //   try {
@@ -274,15 +289,16 @@ productRouter.get("/products/erp/:docName", async (req, res) => {
     });
 
     // get the price
+    let images = []
     data.forEach((i, index) => {
       priceList.forEach((_) => {
         if (i.item_code == _.item_code) data[index].price = _.price_list_rate;
       });
       if (i.image === null || i.image === "") {
         const firstChar = i.brand ? i.brand.charAt(0) : '';
-        i.image = firstChar;
+        i.image = [...images, firstChar]
       } else {
-        i.image = `${process.env.ERP_SERVER}/${i.image}`;
+        i.image = [...images, `${process.env.ERP_SERVER}/${i.image}`];
       }
     });
 
@@ -301,7 +317,8 @@ productRouter.get("/products/erp/:docName", async (req, res) => {
         readStock.on("message", function (message) {
           const result = message.substring(1, message.length - 1).split(',');
           data.forEach((list, index) => {
-            list.stockQty = result[index].includes('None') ? 0 : Number(result[index])
+            console.log(result[index])
+            list.stockQty = result[index]?.includes('None') ? 0 : Number(result[index])
           });
           resolve();
         });
@@ -377,13 +394,14 @@ productRouter.get("/products/brand/:brand", async (req, res) => {
                 }
               });
             });
+            let images = []
             const filteredData = data
               .map((item) => {
                 if (item.image === null || item.image === "") {
                   const firstChar = item.brand ? item.brand.charAt(0) : "";
-                  item.image = firstChar;
+                  item.image = [...images, firstChar]
                 } else {
-                  item.image = `${process.env.ERP_SERVER}/${item.image}`;
+                  item.image = [...images, `${process.env.ERP_SERVER}/${item.image}`];
                 }
                 return item;
               })
@@ -445,13 +463,14 @@ productRouter.get("/products/brand/:brand", async (req, res) => {
                 }
               });
             });
+            let images = []
             const filteredData = data
               .map((item) => {
                 if (item.image === null || item.image === "") {
                   const firstChar = item.brand ? item.brand.charAt(0) : "";
-                  item.image = firstChar;
+                  item.image = [...images, firstChar]
                 } else {
-                  item.image = `${process.env.ERP_SERVER}/${item.image}`;
+                  item.image = [...images, `${process.env.ERP_SERVER}/${item.image}`];
                 }
                 return item;
               })
@@ -509,13 +528,14 @@ productRouter.get("/searchProduct", async (req, res) => {
     });
 
     // Filter and transform data
+    let images = []
     const filteredData = data
       .map((item) => {
         if (item.image === null || item.image === "") {
           const firstChar = item.brand ? item.brand.charAt(0) : "";
-          item.image = firstChar;
+          item.image = [...images, firstChar]
         } else {
-          item.image = `${process.env.ERP_SERVER}/${item.image}`;
+          item.image = [...images, `${process.env.ERP_SERVER}/${item.image}`];
         }
         return item;
       })
@@ -544,6 +564,45 @@ productRouter.get("/searchProduct", async (req, res) => {
 //     return res.status(500).send('Internal server error');
 //   }
 // });
+
+productRouter.put("/products/erp/:docName", async (req, res) => {
+  try {
+      const docName = req.params.docName;
+      if (!docName) return res.status(400).send("docName is required");
+      const newQty = req.body.newQty;
+      if (!newQty) return res.status(400).send("New Quantity is required");
+
+      // get stock quantity
+      let editStock = new PythonShell("./python/editStock.py");
+
+      await new Promise((resolve, reject) => {
+          editStock.send(
+              JSON.stringify({ ...credintials, newQty, code: docName })
+          );
+
+          editStock.on("message", function (message) {
+              console.log(message);
+              resolve();
+          });
+
+          editStock.on("error", function (error) {
+              console.log('Error:', error);
+              reject(error);
+          });
+
+          editStock.on("close", function () {
+              console.log('Python script finished');
+              resolve();
+          });
+      });
+
+      res.status(200).send("updated");
+  } catch (e) {
+      console.log('Error:', e);
+      res.status(500).send('internal server error');
+  }
+});
+
 
 
 module.exports = productRouter;

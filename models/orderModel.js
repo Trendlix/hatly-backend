@@ -6,10 +6,47 @@ const orderSchema = new mongoose.Schema({
         ref: 'users'
     },
     products: [{
-        productId: {
-            type: mongoose.Schema.Types.ObjectId,
-            required: true,
-            ref: 'Product'
+        product:{
+            item_name:{
+                type: String,
+                required: true,
+            },
+            item_code:{
+                type: String,
+                required: true,
+            },
+            image:{
+                type: String,
+                required: true,
+            },
+            price:{
+                type: Number,
+                required: true,
+            },
+            brand:{
+                type: String,
+                required: true,
+            },
+            item_group:{
+                type: String,
+                required: true,
+            },
+            variant_of: {
+                type: String,
+                required: false,
+            },
+            color: {
+                type: String,
+                required: false,
+            },
+            ram:{
+                type: Number,
+                required: false,
+            },
+            rom:{
+                type: Number,
+                required: false,
+            }
         },
         quantity: {
             type: Number,

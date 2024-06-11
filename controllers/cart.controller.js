@@ -36,14 +36,17 @@ if (process.env.NODE_ENV !== "production") {
     return db;
   };
   
-
+  function getAttributeValue(attributes, key) {
+    const attribute = attributes.find(attr => attr.hasOwnProperty(key));
+    return attribute ? attribute[key] : null;
+}
 
 const syncCart = async(req, res) => {
     try {
         const user = req.user;
-        const localCart = req.body
+        const localCart = req.body.localCart
         console.log('localCart', localCart)
-        console.log(localCart)
+        console.log(localCart.products)
         let cart = await Cart.findOne({userId: user._id})
         if(!cart) {
             cart = new Cart({
@@ -51,16 +54,16 @@ const syncCart = async(req, res) => {
                 products: localCart.products.map((item)=> {
                     return {
                         product:{
-                            item_code: item.item_code, 
-                            image: item.image,  
-                            item_name: item.item_name, 
-                            item_group: item.item_group,
-                            price: item.price,
-                            brand: item.brand,
-                            variant_of: item.variant_of,
-                            color: item.color,
-                            rom: item.rom,
-                            ram: item.ram
+                            item_code: item.product.item_code, 
+                            image: item.product.image,  
+                            item_name: item.product.item_name, 
+                            item_group: item.product.item_group,
+                            price: item.product.price,
+                            brand: item.product.brand,
+                            variant_of: item.product.variant_of,
+                            color: item.product.color,
+                            rom: item.product.rom,
+                            ram: item.product.ram
                         },
                         quantity: item.quantity, 
                     }
@@ -86,6 +89,7 @@ const addToCart = async(req, res) => {
         const user = req.user;
         console.log('user in request', user)
         const {product, quantity} = req.body;
+        console.log('product', product)
         let cart = await Cart.findOne({ userId: user._id })
         console.log('usercart', cart)
         if(!cart) {
@@ -93,7 +97,7 @@ const addToCart = async(req, res) => {
         }
         // this checks if the product we are trying to add is already in the cart
         // findIndex return the index of the first product that meets the condition if not found returns -1
-        const itemIndex = cart.products.findIndex(item => item.item_code.equals(product.item_code))
+        const itemIndex = cart.products.findIndex(item => item.product.item_code === product.item_code)
         // const productAllData = await Product.findById(productId)
 
         
@@ -111,11 +115,11 @@ const addToCart = async(req, res) => {
                         price: product.price,
                         brand: product.brand,
                         variant_of: product.variant_of,
-                        color: product.color,
-                        rom: product.rom,
-                        ram: product.ram
+                        color: getAttributeValue(product.attributes, 'Colour'),
+                        rom: getAttributeValue(product.attributes, 'Rom'),
+                        ram: getAttributeValue(product.attributes, 'Ram')
                     },
-                    quantity
+                    quantity: cart.products[itemIndex].quantity + quantity
                 }
             }else {
                 cart.products.push({
@@ -127,6 +131,9 @@ const addToCart = async(req, res) => {
                         price: product.price,
                         brand: product.brand,
                         variant_of: product.variant_of,
+                        color: getAttributeValue(product.attributes, 'Colour'),
+                        rom: getAttributeValue(product.attributes, 'Rom'),
+                        ram: getAttributeValue(product.attributes, 'Ram')
                     },
                     quantity
                 })
@@ -236,7 +243,7 @@ const deleteCartItem = async (req, res) => {
                 message: 'Cart not found'
             })
         }
-        const itemIndex = cart.products.findIndex(item => item.item_code.equals(product.item_code))
+        const itemIndex = cart.products.findIndex(item => item.product.item_code === product.item_code)
         if(itemIndex > -1){
             // const productAllData = await Product.findById(cart.products[itemIndex].productId)
             cart.total -= cart.products[itemIndex].quantity * product.price
@@ -266,7 +273,7 @@ const checkoutCart = async (req, res) => {
     try {
         const db = connectToDB();
         const user = req.user
-        const { address, paymentMethod, TransactionId, deliveryFees, extraDescription } = req.body
+        const { address, paymentMethod, TransactionId, deliveryFees } = req.body
         const cart = await Cart.findOne({ userId: user._id })
         console.log(cart)
         if(!cart){
@@ -312,7 +319,7 @@ const checkoutCart = async (req, res) => {
                   readStock.on("message", function (message) {
                     const result = message.substring(1, message.length - 1).split(',');
                     data.forEach((list, index) => {
-                      list.stockQty = result[index].includes('None') ? 0 : Number(result[index])
+                      list.stockQty = result[index]
                     });
                     resolve();
                   });
@@ -327,16 +334,40 @@ const checkoutCart = async (req, res) => {
               const singleItem = data.find((item) => item.attributes.find((attr)=> attr["Colour"] === product.product.color))
               console.log('singleItem', singleItem)
               
+
               let editStock = new PythonShell("./python/editStock.py");
-              await new Promise(resolve=>{
-                editStock.send(
-                  JSON.stringify({ ...credintials, newQty: !singleItem.stockQty.includes("None") ? Number(singleItem.stockQty) - product.quantity : 0, code: product.product.item_code })
-                );
-                editStock.on("message", function (message) { 
-                  console.log(message);
-                  resolve();
-                })
-              })
+
+              await new Promise((resolve, reject) => {
+                  editStock.send(
+                      JSON.stringify({ ...credintials, newQty: !singleItem.stockQty?.includes("None") ? Number(singleItem.stockQty) - product.quantity : 0, code: product.product.item_code })
+                  );
+        
+                  editStock.on("message", function (message) {
+                      console.log(message);
+                      resolve();
+                  });
+        
+                  editStock.on("error", function (error) {
+                      console.log('Error:', error);
+                      reject(error);
+                  });
+        
+                  editStock.on("close", function () {
+                      console.log('Python script finished');
+                      resolve();
+                  });
+              });
+        
+            //   let editStock = new PythonShell("./python/editStock.py");
+            //   await new Promise(resolve=>{
+            //     editStock.send(
+            //       JSON.stringify({ ...credintials, newQty: !singleItem.stockQty?.includes("None") ? Number(singleItem.stockQty) - product.quantity : 0, code: product.product.item_code })
+            //     );
+            //     editStock.on("message", function (message) { 
+            //       console.log(message);
+            //       resolve();
+            //     })
+            //   })
             }
 
             const order = new Order({
@@ -348,12 +379,11 @@ const checkoutCart = async (req, res) => {
                 totalAmount: cart.total + deliveryFees,
                 deliveryFees,
                 TransactionId,
-                extraDescription: extraDescription ? extraDescription : '',
             })
             await order.save()
             const ordersUrl = process.env.NODE_ENV === 'production' ? `https://hatlystore.trendlix.com/orders/${order._id}`: `http://localhost:3000/orders/${order._id}`
             // await sendSMS(user.phone, `Your order of id ${order._id} has been confirmed successfully check it from here ${ordersUrl}`);
-            await sendOrderMail(user, order)
+            // await sendOrderMail(user, order)
             cart.products = [];
             cart.total = 0;
             cart.totalQuantity = 0
