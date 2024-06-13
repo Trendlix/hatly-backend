@@ -8,6 +8,6 @@ routes.post('/sync', authUser, cartController.syncCart);
 routes.get('/', authUser, cartController.getCart);
 routes.put('/edit', authUser, cartController.updateCart)
 routes.post('/checkout', authUser, cartController.checkoutCart)
-routes.delete('/', authUser, cartController.deleteCartItem)
+routes.delete('/:item_code', authUser, cartController.deleteCartItem)
 
 module.exports = routes;

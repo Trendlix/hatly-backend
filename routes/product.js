@@ -358,11 +358,11 @@ productRouter.get("/products/erp/:docName", async (req, res) => {
 //   }
 // })
 
-productRouter.get("/products/brand/:brand", async (req, res) => {
-  const brand = req.params.brand;
+productRouter.get("/products/brand/:brands", async (req, res) => {
+  const brands = req.params.brands;
   const category = req.query.category
   const db = connectToDB();
-  console.log('brand', brand);
+  console.log('brand', brands);
   if (category === undefined || category === 'all') {
     // get the data
     await db
@@ -405,7 +405,7 @@ productRouter.get("/products/brand/:brand", async (req, res) => {
                 }
                 return item;
               })
-              .filter(item => item.is_stock_item && item.is_sales_item && item.brand === brand);
+              .filter(item => item.is_stock_item && item.is_sales_item && brands.includes(item.brand));
             return res.status(200).json(filteredData);
           }).catch((e) => {
             console.log(e);
@@ -474,7 +474,7 @@ productRouter.get("/products/brand/:brand", async (req, res) => {
                 }
                 return item;
               })
-              .filter(item => item.is_stock_item && item.is_sales_item && item.item_group===category && item.brand === brand);
+              .filter(item => item.is_stock_item && item.is_sales_item && item.item_group===category && brands.includes(item.brand));
             return res.status(200).json(filteredData);
           }).catch((e) => {
             console.log(e);

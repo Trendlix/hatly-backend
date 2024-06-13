@@ -44,7 +44,8 @@ if (process.env.NODE_ENV !== "production") {
 const syncCart = async(req, res) => {
     try {
         const user = req.user;
-        const localCart = req.body.localCart
+        const localCart = req.body
+        console.log('req.body.products', req.body.products)
         console.log('localCart', localCart)
         console.log(localCart.products)
         let cart = await Cart.findOne({userId: user._id})
@@ -234,7 +235,7 @@ const deleteCartItem = async (req, res) => {
     try {
         // const { itemId } = req.params
         const user = req.user
-        const product = req.body.product
+        const item_code = req.params.item_code
         let cart = await Cart.findOne({ userId: user._id })
         if(!cart){
             return res.status(404).json({
@@ -243,10 +244,10 @@ const deleteCartItem = async (req, res) => {
                 message: 'Cart not found'
             })
         }
-        const itemIndex = cart.products.findIndex(item => item.product.item_code === product.item_code)
+        const itemIndex = cart.products.findIndex(item => item.product.item_code === item_code)
         if(itemIndex > -1){
             // const productAllData = await Product.findById(cart.products[itemIndex].productId)
-            cart.total -= cart.products[itemIndex].quantity * product.price
+            cart.total -= cart.products[itemIndex].quantity * cart.products[itemIndex].product.price
             cart.totalQuantity -= cart.products[itemIndex].quantity
             cart.products.splice(itemIndex, 1)
             await cart.save()
