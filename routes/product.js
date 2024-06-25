@@ -282,23 +282,23 @@ productRouter.get("/products/erp/:docName", async (req, res) => {
     }
 
     let readStock = new PythonShell("./python/readStock.py");
-
     const priceList = await db.getDocList("Item Price", {
       fields: ["item_code", "price_list_rate"],
       limit: "4000",
     });
+    data.forEach(item => {
+      const priceItem = priceList.find(price => price.item_code === item.item_code);
+      item.price = priceItem ? priceItem.price_list_rate : 0;
+    });
 
-    // get the price
+    // Process images
     let images = []
-    data.forEach((i, index) => {
-      priceList.forEach((_) => {
-        if (i.item_code == _.item_code) data[index].price = _.price_list_rate;
-      });
-      if (i.image === null || i.image === "") {
-        const firstChar = i.brand ? i.brand.charAt(0) : '';
-        i.image = [...images, firstChar]
+    data.forEach(item => {
+      if (!item.image) {
+        const firstChar = item.brand ? item.brand.charAt(0) : '';
+        item.image = [...images, firstChar];
       } else {
-        i.image = [...images, `${process.env.ERP_SERVER}/${i.image}`];
+        item.image = [...images, `${process.env.ERP_SERVER}/${item.image}`];
       }
     });
 
