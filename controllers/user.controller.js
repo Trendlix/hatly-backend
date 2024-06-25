@@ -1,4 +1,3 @@
-const db = require("../database");
 const jwt = require('jsonwebtoken')
 const bcryptjs = require('bcryptjs')
 const crypto = require("crypto");
@@ -282,7 +281,7 @@ const resetPassword = async (req, res, next) => {
       .digest('hex');
 
     const user = await User.findOne({
-      passwordResetToken: hashedToken,
+      // passwordResetToken: hashedToken,
       passwordResetExpires: { $gt: Date.now() }
     });
 
@@ -315,7 +314,7 @@ const resetPassword = async (req, res, next) => {
 const forgotPassword = async (req, res, next) => {
   try {
     const { phone } = req.body
-    const url = 'https://hatlystore.trendlix.com/change-password'
+    const url = process.env.NODE_ENV === 'production' ? 'https://hatlystore.trendlix.com/change-password' : 'http://localhost:3000/change-password'
     const user = await User.findOne({ phone })
     if (!user) {
       // return res.status(404).send('user with this email dose not exist')
@@ -325,7 +324,7 @@ const forgotPassword = async (req, res, next) => {
     // const token = jwt.sign({ _id: user._id }, 'resetPassword', { expiresIn: '20m' })
 
     await user.save({ validateBeforeSave: false });
-    sendSMS(phone, `Use this link to reset your password  ${url}?token=${token}`)
+    sendSMS(phone, `Use this link to reset your password ${url}?token=${token}`)
 
     res.status(200).json({
       ok: true,
@@ -333,7 +332,8 @@ const forgotPassword = async (req, res, next) => {
       message: 'succeeded',
       body: 'check your phone number'
     })
-    // user.updateOne({ resetLink: token }, function (err, success) {
+
+    // User.updateOne({ resetLink: token }, function (err, success) {
     //   if (err) {
     //     return next(ServerError.badRequest(400, 'something went wrong'))
     //   }
@@ -354,34 +354,37 @@ const forgotPassword = async (req, res, next) => {
 
 const logout = async (req, res, next) => {
   try {
-    // console.log(req.user.tokens)
-    console.log(req.cookies.access_token)
-    req.user.tokens = req.user.tokens.filter((el) => {
-      return el != req.cookies.access_token;
-    });
-    // res.cookie("token", null, {
-    //   expires: new Date(Date.now()),
-    //   httpOnly: true,
-    // });
+    const token = req.cookies.access_token;
+    if (!token) {
+      return res.status(400).json({ message: 'No token provided' });
+    }
+
+    console.log('Access token from cookie:', token);
+    
+    // Filter out the token to remove it from user's tokens
+    req.user.tokens = req.user.tokens.filter((el) => el !== token);
+    
     await req.user.save();
-    res.status(200).clearCookie('access_token', {
+    
+    // Clear the cookie by setting its expiration time to a past date
+    res.cookie('access_token', '', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production' ,
+      secure: process.env.NODE_ENV === 'production',
+      expires: new Date(0), // Set expiration time to a past date
       path: '/',
       domain: process.env.NODE_ENV !== 'production' ? "localhost" : ".trendlix.com",
-      sameSite: 'none',
-    }).json({
+      sameSite : process.env.NODE_ENV === 'production' ? 'None': 'lax',
+    }).status(200).json({
       ok: true,
       code: 200,
-      message: 'succeeded',
-    })
+      message: 'Logout succeeded',
+    });
   } catch (e) {
-    // e.statusCode = 400
-    next(e)
-    // next(ServerError.badRequest(500, e.message))
-    // res.status(500).send(e.message);
+    console.error('Logout error:', e.message);
+    next(e);
   }
 };
+
 
 const logoutAll = async (req, res, next) => {
   try {

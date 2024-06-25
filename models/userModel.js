@@ -49,7 +49,7 @@ const userSchema = mongoose.Schema({
         // throw new Error("password must contain at least one capital/small letter & special characters and number")
     }
   },
-  state: {
+  country: {
     type: String,
     default: '',
     trim: true
