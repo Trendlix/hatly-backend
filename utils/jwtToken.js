@@ -3,7 +3,7 @@
 const sendToken = async(user, statusCode, res) => {
   const token = await user.generateJWTToken();
   // console.log(token)
-  const domain = process.env.NODE_ENV !== 'production' ? "localhost" : ".trendlix.com";
+  const domain = process.env.NODE_ENV !== 'production' ? "localhost" : "hatly-store.vercel.app";
   // options for cookie
   const options = {
     expires: new Date(
