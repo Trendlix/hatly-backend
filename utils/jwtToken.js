@@ -13,7 +13,7 @@ const sendToken = async(user, statusCode, res) => {
     secure: process.env.NODE_ENV === 'production',
     path : '/',
     domain, 
-    // sameSite : process.env.NODE_ENV === 'production' ? 'None': 'lax',
+    sameSite : process.env.NODE_ENV === 'production' ? 'none': 'lax',
   };
   user.tokens = null
   user.password = null
