@@ -4,28 +4,37 @@ const User = require("../models/userModel");
 
 exports.authUser = async (req, res, next) => {
   try {
+    const authHeader = req.headers.authorization;
+    console.log('Auth Header:', authHeader); // Log auth header
 
-    const { access_token: token } = req.cookies;
-    // console.log(req.cookies)
+    const token = authHeader && authHeader.split(' ')[1];
+    console.log('Token:', token); // Log token
+
     if (!token) {
-      return next(ServerError.badRequest(401, 'Please Login to access this resource'));
+      return res.status(401).json({ message: 'Token not provided' });
     }
 
-    const decodedData = jwt.verify(token, process.env.JWT_SECRET);
-    // console.log(token)
-    const user = await User.findOne({ _id: decodedData.id, tokens: token });
-    if (!user) {
-      console.log('error')
-      return next(ServerError.badRequest(401, 'Please Login to access this resource'));
-    }
-    console.log('found')
-    req.user = user
-
-    next();
-  }
-  catch (e) {
-    e.statusCode = 401;
-    next(e);
+    jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
+      if (err) {
+        console.error('JWT Error:', err);
+        return res.status(403).json({ message: 'Invalid token' });
+      }
+      console.log('User:', user); // Log user
+      const userData = await User.findById(user.id);
+      const userDoc = {...userData._doc}
+      delete userDoc.tokens
+      delete userDoc.password
+      delete userDoc.resetToken
+      res.status(200).json({
+        ok: true,
+        code: 200,
+        message: 'Succeeded',
+        body: userDoc
+      });
+    });  
+  } catch (error) {
+    console.error('Server Error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
