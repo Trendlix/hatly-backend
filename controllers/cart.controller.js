@@ -13,6 +13,7 @@ if (process.env.NODE_ENV !== "production") {
   let editStock = new PythonShell("./python/editStock.py");
   
   const { FrappeApp } = require("frappe-js-sdk");
+const { default: mongoose } = require('mongoose');
   if (process.env.NODE_ENV !== "production") {
     require("dotenv").config();
   }
@@ -175,7 +176,8 @@ const addToCart = async(req, res) => {
 const getCart = async (req, res) => {
     try {
         const {userId} = req.params;
-        const cart = await Cart.findOne(userId)
+        const userObjectId = new mongoose.Types.ObjectId(userId);
+        const cart = await Cart.findOne({ userId: userObjectId })
         console.log('you cart is ', cart)
         if(!cart){
             return res.status(404).json({
