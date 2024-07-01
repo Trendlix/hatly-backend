@@ -5,6 +5,6 @@ const { authUser } = require('../../middleware/userAuth');
 const routes = Router();
 
 
-routes.route('/').get(authUser , orderController.getUserOrders);
-routes.route('/:orderId').get(authUser , orderController.getOrder)
+routes.route('/:userId').get(orderController.getUserOrders);
+routes.route('/:userId/:orderId').get(orderController.getOrder)
 module.exports = routes
