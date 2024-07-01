@@ -19,7 +19,7 @@ const sendToken = async(user, statusCode, res) => {
   user.password = null
   user.resetLink = null
   console.log('user after token generation', user)
-  res.status(statusCode).cookie("access_token", token, options).json({
+  res.status(statusCode).json({
     success: true,
     user,
     token,

@@ -95,21 +95,37 @@ const login = async (req, res, next) => {
 
 const getUserInfo = async (req, res, next) => {
   try {
-    const user = { ...req.user._doc };
-    delete user.tokens
-    delete user.password
-    delete user.resetLink
-    if (!user) {
-      return next(ServerError.badRequest(401, "token is not valid"));
+    const authHeader = req.headers.authorization;
+    console.log('Auth Header:', authHeader); // Log auth header
+
+    const token = req.body.token;
+    console.log('Token from body:', token); // Log token from body
+
+    if (!token) {
+      return res.status(401).json({ message: 'Token not provided' });
     }
-    res.status(200).json({
-      ok: true,
-      code: 200,
-      message: 'succeeded',
-      body: user
-    })
-  } catch (e) {
-    next(e);
+
+    jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
+      if (err) {
+        console.error('JWT Error:', err);
+        return res.status(403).json({ message: 'Invalid token' });
+      }
+      console.log('User:', user); // Log user
+      const userData = await User.findById(user.id);
+      const userDoc = {...userData._doc}
+      delete userDoc.tokens
+      delete userDoc.password
+      delete userDoc.resetToken
+      res.status(200).json({
+        ok: true,
+        code: 200,
+        message: 'Succeeded',
+        body: userDoc
+      });
+    });
+  } catch (error) {
+    console.error('Server Error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 }
 

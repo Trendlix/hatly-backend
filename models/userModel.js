@@ -125,7 +125,7 @@ userSchema.statics.Login = async function (mail, pass) {
 
 userSchema.methods.generateJWTToken = async function () {
   const user = this
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET)
+  const token = jwt.sign({ id: user._id, username: user.firstName }, process.env.JWT_SECRET, { expiresIn: '1h' })
   user.tokens = user.tokens.concat(token)
   await user.save()
   return token

@@ -24,11 +24,18 @@ const app = express();
 // 
 app.use(cors({credentials : true , origin : ['http://localhost:3000', 'http://localhost:3001', 'https://hatly-store.vercel.app' , 'https://hatlytest.trendlix.com' , 'https://hatlystore.trendlix.com']}));
 // app.use(cors({credentials : true , origin :  'https://hatlytest.trendlix.com'}));
-app.set('trust proxy', 1)
+// app.set('trust proxy', 1)
 app.use(express.json());
 app.use(cookieParser());
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.url}`);
+  console.log(`Headers:`, req.headers);
+  console.log(`Body:`, req.body);
+  next();
+});
+
 
 app.use("/api/v1/", productRouter);
 app.use("/api/v1/", categoryRouter);
