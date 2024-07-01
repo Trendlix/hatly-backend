@@ -2,6 +2,7 @@ const { customAlphabet } = require('nanoid');
 const ServerError = require("../utils/ErrorInterface");
 const sendSMS = require("../utils/sendSMS");
 const Order = require("../models/orderModel");
+const { default: mongoose } = require('mongoose');
 const alphabet = '0123456789';
 const nanoid = customAlphabet(alphabet, 12);
 
@@ -207,8 +208,8 @@ const getUserOrders = async (req, res, next) => {
     //   )
     //   order.ordersItems = orderItems;
     // }
-    
-    const userOrders = await Order.find(userId)
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const userOrders = await Order.find({ userId: userObjectId })
     if(userOrders.length < 1) {
       return res.status(200).json({
         ok: true,
