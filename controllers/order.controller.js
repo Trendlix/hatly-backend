@@ -179,7 +179,7 @@ const getUserOrders = async (req, res, next) => {
     // const currentPage = +page || 1;
     // const currentLimit = +limit || 4;
     // const skip = (currentPage - 1) * currentLimit;
-    const user = req.user;
+    const {userId} = req.params;
     // get user from db
     // const [[erpUser], ...rest] = await db.query(
     //   "SELECT * From `tabCustomer` Where `idx` = ?;",
@@ -208,7 +208,7 @@ const getUserOrders = async (req, res, next) => {
     //   order.ordersItems = orderItems;
     // }
     
-    const userOrders = await Order.find({userId: user._id})
+    const userOrders = await Order.find({userId})
     if(userOrders.length < 1) {
       return res.status(200).json({
         ok: true,
@@ -232,8 +232,8 @@ const getUserOrders = async (req, res, next) => {
 
 const getOrder = async (req, res, next) => {
   try {
-    const { orderId } = req.params;
-    const user = req.user
+    const { orderId, userId } = req.params;
+    // const user = req.user
     if (!orderId)
       return next(ServerError.badRequest(400, 'order id is required'));
     // get user from db

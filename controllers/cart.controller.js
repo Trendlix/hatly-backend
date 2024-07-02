@@ -43,8 +43,8 @@ if (process.env.NODE_ENV !== "production") {
 
 const syncCart = async(req, res) => {
     try {
-        const user = req.user;
-        const localCart = req.body
+        const user = req.body.user;
+        const localCart = req.body.localCart
         console.log('req.body.products', req.body.products)
         console.log('localCart', localCart)
         console.log(localCart.products)
@@ -87,7 +87,7 @@ const syncCart = async(req, res) => {
 
 const addToCart = async(req, res) => {
     try {
-        const user = req.user;
+        const user = req.body.user;
         console.log('user in request', user)
         const {product, quantity} = req.body;
         console.log('product', product)
@@ -174,8 +174,8 @@ const addToCart = async(req, res) => {
 
 const getCart = async (req, res) => {
     try {
-        const user = req.user;
-        const cart = await Cart.findOne({ userId: user._id })
+        const {userId} = req.params;
+        const cart = await Cart.findOne(userId)
         console.log('you cart is ', cart)
         if(!cart){
             return res.status(404).json({
@@ -197,7 +197,7 @@ const getCart = async (req, res) => {
 
 const updateCart = async (req, res) => {
     try {
-        const user = req.user
+        const user = req.body.user
         const { productId, quantity } = req.body
         const cart = await Cart.findOne({ userId: user._id })
         if(!cart) {
@@ -234,7 +234,7 @@ const updateCart = async (req, res) => {
 const deleteCartItem = async (req, res) => {
     try {
         // const { itemId } = req.params
-        const user = req.user
+        const user = req.body.user
         const item_code = req.params.item_code
         let cart = await Cart.findOne({ userId: user._id })
         if(!cart){
